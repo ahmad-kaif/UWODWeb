@@ -1,3 +1,5 @@
+require("dotenv").config(); // Load environment variables
+
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
@@ -5,19 +7,19 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 
-// Configure multer to preserve file extensions
+const app = express();
+
+// === Multer Setup ===
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // Ensure uploads directory exists
-    if (!fs.existsSync("uploads")) {
-      fs.mkdirSync("uploads");
+    const uploadPath = "uploads";
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath);
     }
-    cb(null, "uploads/");
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    // Get the file extension
     const ext = path.extname(file.originalname);
-    // Create a unique filename with the original extension
     cb(null, Date.now() + "-" + Math.round(Math.random() * 1e9) + ext);
   },
 });
@@ -25,7 +27,6 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
-    // Accept only image files
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif|bmp|tiff|tif|webp)$/)) {
       return cb(new Error("Only image files are allowed!"), false);
     }
@@ -33,39 +34,29 @@ const upload = multer({
   },
 });
 
-const app = express();
+// === Middleware ===
+app.use(express.json());
 
-// Configure CORS to allow requests from the frontend
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_ORIGIN || "*", // Use env variable for flexibility
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
 );
 
-app.use(express.json());
-
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, "build")));
-
+// === Main Route ===
 app.post("/api/detect", upload.single("image"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No image file provided" });
   }
 
   try {
-    // Use the existing model file in the model directory
-    // const modelPath = "./model/best.pt";
-
-    // Run the Python script for inference
     const pythonProcess = spawn("python3", [
       path.join(__dirname, "../ai-model/detect.py"),
       "--image",
       req.file.path,
     ]);
-
-    // console.log("Python precess: ", pythonProcess);
 
     let result = "";
     let error = "";
@@ -79,7 +70,6 @@ app.post("/api/detect", upload.single("image"), async (req, res) => {
     });
 
     pythonProcess.on("close", (code) => {
-      // Clean up the uploaded file
       try {
         if (fs.existsSync(req.file.path)) {
           fs.unlinkSync(req.file.path);
@@ -94,24 +84,12 @@ app.post("/api/detect", upload.single("image"), async (req, res) => {
       }
 
       try {
-        // Try to parse the result as JSON
-        let detectionResults;
-        try {
-          detectionResults = JSON.parse(result);
-        } catch (parseError) {
-          console.error("Failed to parse detection results:", parseError);
-          console.error("Raw result:", result);
-          return res
-            .status(500)
-            .json({ error: "Failed to parse detection results" });
-        }
+        let detectionResults = JSON.parse(result);
 
-        // Check if the result contains an error
         if (detectionResults.error) {
           return res.status(500).json({ error: detectionResults.error });
         }
 
-        // Check if no objects were detected
         if (detectionResults.length === 0) {
           return res.json({
             message: "No objects detected in the image",
@@ -122,7 +100,10 @@ app.post("/api/detect", upload.single("image"), async (req, res) => {
         res.json(detectionResults);
       } catch (e) {
         console.error("Failed to process detection results:", e);
-        res.status(500).json({ error: "Failed to process detection results" });
+        console.error("Raw output:", result);
+        res
+          .status(500)
+          .json({ error: "Failed to process detection results" });
       }
     });
   } catch (error) {
@@ -131,13 +112,8 @@ app.post("/api/detect", upload.single("image"), async (req, res) => {
   }
 });
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
-// app.get("*", (req, res) => {
-//   res.sendFile(path.join(__dirname, "build", "index.html"));
-// });
-
-const port = process.env.PORT || 3001;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// === Server Start ===
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
