@@ -39,7 +39,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "*", // Use env variable for flexibility
+    origin: process.env.CLIENT_ORIGIN || "https://uwodweb.onrender.com",
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
