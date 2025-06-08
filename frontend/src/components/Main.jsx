@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API_URL = "http://localhost:3001";
+const API_URL = "https://uwodwebbackend.onrender.com";
 
 const Main = () => {
   const [selectedImage, setSelectedImage] = useState(null);
