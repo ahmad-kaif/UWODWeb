@@ -53,7 +53,7 @@ app.post("/api/detect", upload.single("image"), async (req, res) => {
 
   try {
     const pythonProcess = spawn("python3", [
-      path.join(__dirname, "../ai-model/detect.py"),
+      path.join(__dirname, "ai-model/detect.py"),
       "--image",
       req.file.path,
     ]);
