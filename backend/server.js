@@ -83,7 +83,7 @@ app.post("/api/detect", upload.single("image"), async (req, res) => {
       }
 
       if (code !== 0) {
-        console.error("Python process error:", error);
+        console.error("Python process error:", err);
         return res.status(500).json({ error: "Detection failed" });
       }
 
