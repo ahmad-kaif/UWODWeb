@@ -1,35 +1,45 @@
-# About the Website
+# Underwater Object Detection Website
 
-## Tech Stack
+A web application that detects underwater objects in sonar images using a deep learning model.
+
+---
+
+## 🌊 Relevance of the Project
+
+Detecting objects in sonar images plays a crucial role in marine research and oceanology. Applications include:
+
+- Mapping ocean floors for scientific exploration.
+- Locating underwater wreckage and submerged infrastructure.
+- Monitoring marine life and habitats.
+- Supporting underwater navigation and robotics.
+
+This AI-powered tool streamlines the detection process, enabling faster and more accurate analysis of sonar data.
+
+---
+
+## 🚀 Tech Stack
 
 - **Frontend:** React (Vite)
-- **Backend:** Node.js (JavaScript) & Flask (Python)
+- **Backend:** Node.js (JavaScript)
+- **AI Model Server:** Flask (Python)
+- **Model:** YOLOv8m (achieves ~83% mAP@0.5)
 
 ---
 
-## Getting Started
+## 📸 Preview
 
-### Step 1: Start the Frontend
+### 1. Objects to be identified
+![Upload Page](frontend/src/assets/objects.png)
 
-```bash
-npm run dev
-```
 
-### Step 2: Start the Backend
+### 2. Sample Sonar Image
+![Upload Page](frontend/src/assets/00056.jpg)
 
-Navigate to the `backend` directory and run:
+### 3. Detected Results
+![Upload Page](frontend/src/assets/result1.png)
 
-```bash
-npm start
-```
+### 4. Metrics
+![Upload Page](frontend/src/assets/metrics.png)
 
----
 
-## How It Works
-
-1. The user uploads a sonar image using the React frontend.
-2. The frontend sends the image to the Node.js backend.
-3. The Node.js backend spawns a Python process to run the detection script (no need to run the Python script manually).
-4. The Python script loads the model, processes the image, and detects objects.
-5. The Python script returns the result to the Node.js backend, which then sends the response to the frontend to display the detected objects.
 
