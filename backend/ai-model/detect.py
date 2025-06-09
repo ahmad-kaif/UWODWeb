@@ -12,12 +12,14 @@ MODEL_PATH = os.path.join(SCRIPT_DIR, 'model', 'best.pt')
 
 
 def load_model():
+    print(f"Looking for model at: {MODEL_PATH}")  # Debug log
     if not os.path.exists(MODEL_PATH):
         raise FileNotFoundError(f"Model not found at: {MODEL_PATH}")
     return YOLO(MODEL_PATH)
 
 
 def detect_objects(model, image_path):
+    print(f"Detecting objects in: {image_path}")  # Debug log
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image not found at: {image_path}")
 
@@ -38,6 +40,7 @@ def detect_objects(model, image_path):
 
 
 def draw_bounding_boxes(image_path, detections, output_path):
+    print(f"Saving annotated image to: {output_path}")  # Debug log
     image = cv2.imread(image_path)
 
     for det in detections:
@@ -58,10 +61,9 @@ def main():
     args = parser.parse_args()
 
     try:
-        with open(os.devnull, 'w') as devnull:
-            with contextlib.redirect_stdout(devnull), contextlib.redirect_stderr(devnull):
-                model = load_model()
-                detections = detect_objects(model, args.image)
+        print("Starting detection pipeline...")  # Debug log
+        model = load_model()
+        detections = detect_objects(model, args.image)
 
         # Prepare output path
         annotated_path = args.image.replace("uploads", "annotated")
@@ -71,9 +73,11 @@ def main():
             "detections": detections,
             "annotated_image_path": annotated_path
         }
+
         print(json.dumps(result))
 
     except Exception as e:
+        print(f"Exception occurred: {e}", file=sys.stderr)  # Visible error on Render logs
         error_json = json.dumps({'error': str(e)})
         print(error_json, file=sys.stderr)
         sys.exit(1)
