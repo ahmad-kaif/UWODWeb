@@ -1,10 +1,10 @@
 import { useState } from "react";
 
 // For production
-// const API_URL = "https://uwodwebbackend.onrender.com";
+const API_URL = "https://uwodwebbackend.onrender.com";
 
 // For development
-const API_URL = "http://localhost:3001";
+// const API_URL = "http://localhost:3001";
 
 const Main = () => {
   const [selectedImage, setSelectedImage] = useState(null);
