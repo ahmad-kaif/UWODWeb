@@ -1,4 +1,4 @@
-require("dotenv").config(); // Load environment variables
+require("dotenv").config();
 
 const express = require("express");
 const multer = require("multer");
@@ -8,6 +8,9 @@ const fs = require("fs");
 const { spawn } = require("child_process");
 
 const app = express();
+
+// === Serve Annotated Images ===
+app.use("/annotated", express.static(path.join(__dirname, "annotated")));
 
 // === Multer Setup ===
 const storage = multer.diskStorage({
@@ -36,7 +39,6 @@ const upload = multer({
 
 // === Middleware ===
 app.use(express.json());
-
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || "https://uwodweb.onrender.com",
@@ -45,11 +47,13 @@ app.use(
   })
 );
 
-// === Main Route ===
+// === Main Detection Route ===
 app.post("/api/detect", upload.single("image"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No image file provided" });
   }
+
+  console.log("Received file:", req.file);
 
   try {
     const pythonProcess = spawn("python3", [
@@ -84,26 +88,29 @@ app.post("/api/detect", upload.single("image"), async (req, res) => {
       }
 
       try {
-        let detectionResults = JSON.parse(result);
+        const { detections, annotated_image_path } = JSON.parse(result);
 
-        if (detectionResults.error) {
-          return res.status(500).json({ error: detectionResults.error });
-        }
-
-        if (detectionResults.length === 0) {
+        if (!detections || detections.length === 0) {
           return res.json({
             message: "No objects detected in the image",
             detections: [],
           });
         }
 
-        res.json(detectionResults);
+        // Extract filename and form public URL
+        const fileName = path.basename(annotated_image_path);
+        const imageUrl = `${req.protocol}://${req.get("host")}/annotated/${fileName}`;
+
+        return res.json({
+          message: "Detection successful",
+          detections,
+          imageUrl,
+        });
+
       } catch (e) {
         console.error("Failed to process detection results:", e);
         console.error("Raw output:", result);
-        res
-          .status(500)
-          .json({ error: "Failed to process detection results" });
+        res.status(500).json({ error: "Failed to process detection results" });
       }
     });
   } catch (error) {
@@ -112,7 +119,7 @@ app.post("/api/detect", upload.single("image"), async (req, res) => {
   }
 });
 
-// === Server Start ===
+// === Start Server ===
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

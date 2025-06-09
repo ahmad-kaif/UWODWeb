@@ -1,10 +1,15 @@
 import { useState } from "react";
 
-const API_URL = "https://uwodwebbackend.onrender.com";
+// For production
+// const API_URL = "https://uwodwebbackend.onrender.com";
+
+// For development
+const API_URL = "http://localhost:3001";
 
 const Main = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [annotatedImageUrl, setAnnotatedImageUrl] = useState(null);
   const [detectionResults, setDetectionResults] = useState(null);
   const [noObjectsMessage, setNoObjectsMessage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +27,7 @@ const Main = () => {
       }
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setAnnotatedImageUrl(null);
       setDetectionResults(null);
       setNoObjectsMessage(null);
       setError(null);
@@ -60,8 +66,10 @@ const Main = () => {
       if (data.message?.includes("No objects detected")) {
         setNoObjectsMessage(data.message);
         setDetectionResults([]);
+        setAnnotatedImageUrl(null);
       } else {
-        setDetectionResults(data);
+        setDetectionResults(data.detections);
+        setAnnotatedImageUrl(data.imageUrl);
       }
     } catch (err) {
       setError(err.message || "Failed to process sonar image.");
@@ -73,7 +81,6 @@ const Main = () => {
   return (
     <div className="min-h-screen bg-[#0D1117] text-white py-12 px-6 flex flex-col items-center">
       <div className="max-w-4xl w-full">
-
         {/* Banner */}
         <div className="bg-[#161B22] rounded-xl p-10 text-center shadow-xl mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-cyan-400 font-orbitron tracking-wide">
@@ -106,20 +113,22 @@ const Main = () => {
             />
           </div>
 
-          {previewUrl && (
+          {(previewUrl || annotatedImageUrl) && (
             <div className="text-center mb-8">
               <img
-                src={previewUrl}
-                alt="Sonar Preview"
+                src={annotatedImageUrl || previewUrl}
+                alt="Sonar"
                 className="mx-auto max-h-96 rounded-xl border-4 border-cyan-400 shadow-lg"
               />
-              <button
-                onClick={handleDetection}
-                disabled={loading}
-                className="mt-6 bg-cyan-500 hover:bg-cyan-400 text-black px-8 py-3 rounded-lg font-semibold disabled:opacity-60 transition duration-300"
-              >
-                {loading ? "Scanning..." : "Detect Objects"}
-              </button>
+              {!annotatedImageUrl && (
+                <button
+                  onClick={handleDetection}
+                  disabled={loading}
+                  className="mt-6 bg-cyan-500 hover:bg-cyan-400 text-black px-8 py-3 rounded-lg font-semibold disabled:opacity-60 transition duration-300"
+                >
+                  {loading ? "Scanning..." : "Detect Objects"}
+                </button>
+              )}
             </div>
           )}
 
